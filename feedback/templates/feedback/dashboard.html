@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sentiment Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>📈 Feedback Sentiment Dashboard</h2>
+
+    <!-- Pie Chart -->
+    <h3>Sentiment Breakdown</h3>
+    <canvas id="pieChart" width="300" height="300"></canvas>
+
+    <!-- Line Chart -->
+    <h3>Feedbacks Over Last 7 Days</h3>
+    <canvas id="lineChart" width="500" height="300"></canvas>
+
+    <!-- Table -->
+    <h3>Recent Feedbacks</h3>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Text</th>
+            <th>Sentiment</th>
+            <th>Date</th>
+        </tr>
+        {% for fb in feedbacks %}
+        <tr>
+            <td>{{ fb.text|truncatechars:60 }}</td>
+            <td>{{ fb.sentiment }}</td>
+            <td>{{ fb.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <script>
+        // Pie Chart Data
+        const pieData = {
+            labels: [{% for item in sentiment_counts %}'{{ item.sentiment }}',{% endfor %}],
+            datasets: [{
+                label: 'Sentiment',
+                data: [{% for item in sentiment_counts %}{{ item.count }},{% endfor %}],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+            }]
+        };
+
+        new Chart(document.getElementById('pieChart'), {
+            type: 'pie',
+            data: pieData,
+        });
+
+        // Line Chart Data
+        const lineData = {
+            labels: [{% for day in daily_counts %}'{{ day.day }}',{% endfor %}],
+            datasets: [{
+                label: 'Feedback Count',
+                data: [{% for day in daily_counts %}{{ day.count }},{% endfor %}],
+                fill: false,
+                borderColor: '#007bff',
+                tension: 0.1
+            }]
+        };
+
+        new Chart(document.getElementById('lineChart'), {
+            type: 'line',
+            data: lineData,
+        });
+    </script>
+</body>
+</html>
