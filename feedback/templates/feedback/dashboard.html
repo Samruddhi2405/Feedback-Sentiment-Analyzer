@@ -4,17 +4,43 @@
 <head>
     <title>Sentiment Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        td, th {
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <h2>📈 Feedback Sentiment Dashboard</h2>
 
     <!-- Pie Chart -->
     <h3>Sentiment Breakdown</h3>
-    <canvas id="pieChart" width="300" height="300"></canvas>
+    <div class="chart-container">
+        <canvas id="pieChart" width="250" height="250"></canvas>
+    </div>
 
     <!-- Line Chart -->
     <h3>Feedbacks Over Last 7 Days</h3>
-    <canvas id="lineChart" width="500" height="300"></canvas>
+    <div class="chart-container">
+        <canvas id="lineChart" width="500" height="300"></canvas>
+    </div>
 
     <!-- Table -->
     <h3>Recent Feedbacks</h3>
@@ -34,36 +60,44 @@
     </table>
 
     <script>
-        // Pie Chart Data
-        const pieData = {
-            labels: [{% for item in sentiment_counts %}'{{ item.sentiment }}',{% endfor %}],
-            datasets: [{
-                label: 'Sentiment',
-                data: [{% for item in sentiment_counts %}{{ item.count }},{% endfor %}],
-                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
-            }]
-        };
+        // Prepare Pie Chart Data from Django context
+        const pieLabels = {{ sentiment_counts|json_script:"pie-labels" }};
+        const pieDataValues = {{ sentiment_counts|json_script:"pie-values" }};
+
+        const parsedPieLabels = pieLabels.map(item => item.sentiment);
+        const parsedPieValues = pieDataValues.map(item => item.count);
 
         new Chart(document.getElementById('pieChart'), {
             type: 'pie',
-            data: pieData,
+            data: {
+                labels: parsedPieLabels,
+                datasets: [{
+                    label: 'Sentiment',
+                    data: parsedPieValues,
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                }]
+            },
         });
 
         // Line Chart Data
-        const lineData = {
-            labels: [{% for day in daily_counts %}'{{ day.day }}',{% endfor %}],
-            datasets: [{
-                label: 'Feedback Count',
-                data: [{% for day in daily_counts %}{{ day.count }},{% endfor %}],
-                fill: false,
-                borderColor: '#007bff',
-                tension: 0.1
-            }]
-        };
+        const lineLabels = {{ daily_counts|json_script:"line-labels" }};
+        const lineDataValues = {{ daily_counts|json_script:"line-values" }};
+
+        const parsedLineLabels = lineLabels.map(item => item.day);
+        const parsedLineData = lineDataValues.map(item => item.count);
 
         new Chart(document.getElementById('lineChart'), {
             type: 'line',
-            data: lineData,
+            data: {
+                labels: parsedLineLabels,
+                datasets: [{
+                    label: 'Feedback Count',
+                    data: parsedLineData,
+                    fill: false,
+                    borderColor: '#007bff',
+                    tension: 0.1
+                }]
+            },
         });
     </script>
 </body>
