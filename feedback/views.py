@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect
-from django.utils import timezone
+from .models import Feedback
 from django.db.models import Count
+from django.utils import timezone
+from datetime import timedelta
 from .forms import FeedbackForm
 from .utils import get_sentiment
-from .models import Feedback
-from datetime import timedelta
 
 def home(request):
     if request.method == 'POST':
@@ -23,21 +23,21 @@ def thank_you(request):
     return render(request, 'feedback/thank_you.html')
 
 def dashboard(request):
+    # Fetch all feedback
     feedbacks = Feedback.objects.all().order_by('-created_at')
 
-    sentiment_counts = (
-        feedbacks.values('sentiment')
-        .annotate(count=Count('sentiment'))
-        .order_by()
-    )
+    # Sentiment counts (Pie chart)
+    sentiment_counts_qs = Feedback.objects.values('sentiment').annotate(count=Count('sentiment'))
+    sentiment_counts = list(sentiment_counts_qs)
 
-    last_7_days = timezone.now() - timedelta(days=7)
-    feedbacks_last_week = feedbacks.filter(created_at__gte=last_7_days)
-    daily_counts = (
-        feedbacks_last_week.extra({'day': "date(created_at)"}).values('day')
-        .annotate(count=Count('id'))
-        .order_by('day')
-    )
+    # Daily feedback count (Line chart for last 7 days)
+    today = timezone.now().date()
+    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    daily_counts = []
+
+    for day in last_7_days:
+        count = Feedback.objects.filter(created_at__date=day).count()
+        daily_counts.append({'day': day.strftime("%Y-%m-%d"), 'count': count})
 
     return render(request, 'feedback/dashboard.html', {
         'feedbacks': feedbacks,

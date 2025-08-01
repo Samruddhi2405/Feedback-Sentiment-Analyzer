@@ -59,40 +59,41 @@
         {% endfor %}
     </table>
 
+    {{ sentiment_counts|json_script:"sentiment-data" }}
+    {{ daily_counts|json_script:"daily-data" }}
+    
     <script>
-        // Prepare Pie Chart Data from Django context
-        const pieLabels = {{ sentiment_counts|json_script:"pie-labels" }};
-        const pieDataValues = {{ sentiment_counts|json_script:"pie-values" }};
+        // Get data from json_script tags
+        const sentimentData = JSON.parse(document.getElementById('sentiment-data').textContent);
+        const dailyData = JSON.parse(document.getElementById('daily-data').textContent);
 
-        const parsedPieLabels = pieLabels.map(item => item.sentiment);
-        const parsedPieValues = pieDataValues.map(item => item.count);
+        // Prepare Pie Chart Data
+        const pieLabels = sentimentData.map(item => item.sentiment);
+        const pieDataValues = sentimentData.map(item => item.count);
 
         new Chart(document.getElementById('pieChart'), {
             type: 'pie',
             data: {
-                labels: parsedPieLabels,
+                labels: pieLabels,
                 datasets: [{
                     label: 'Sentiment',
-                    data: parsedPieValues,
+                    data: pieDataValues,
                     backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
                 }]
             },
         });
 
-        // Line Chart Data
-        const lineLabels = {{ daily_counts|json_script:"line-labels" }};
-        const lineDataValues = {{ daily_counts|json_script:"line-values" }};
-
-        const parsedLineLabels = lineLabels.map(item => item.day);
-        const parsedLineData = lineDataValues.map(item => item.count);
+        // Prepare Line Chart Data
+        const lineLabels = dailyData.map(item => item.day);
+        const lineDataValues = dailyData.map(item => item.count);
 
         new Chart(document.getElementById('lineChart'), {
             type: 'line',
             data: {
-                labels: parsedLineLabels,
+                labels: lineLabels,
                 datasets: [{
                     label: 'Feedback Count',
-                    data: parsedLineData,
+                    data: lineDataValues,
                     fill: false,
                     borderColor: '#007bff',
                     tension: 0.1
